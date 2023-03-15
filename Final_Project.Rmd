@@ -1,0 +1,66 @@
+---
+title: "Final_Project"
+author: "Antonio Salinas"
+date: "2023-02-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(tidyverse)
+library(rvest)
+library(noncensus)
+```
+
+
+```{r}
+getMoney = function(num){
+ for(i in seq_along(num)){
+   newst = str_remove( num[i], "€")
+   if(grepl(".", newst, fixed = TRUE)){
+     if(grepl("M", newst, fixed=TRUE)){
+       new = newst %>%
+         str_remove("\\.")%>%
+         str_replace("M", "00000")
+     }
+     if(grepl("K", newst, fixed=TRUE)){
+       new = newst %>%
+         str_remove("\\.")%>%
+         str_replace("K", "00")
+     }
+   }else{
+     if(grepl("M", newst, fixed=TRUE)){
+       new = str_replace(newst,"M","000000")
+     }
+     if(grepl("K", newst, fixed=TRUE)){
+       new = str_replace(newst,"K","000")
+     }
+   }
+   num[i] = as.numeric(new)
+ }
+  return(num)
+}
+
+```
+## Data Importing & Cleaning
+
+
+```{r}
+# Removed Player Photo, Club Logo, Flag Photo, Contract, Loan Date End, Position Stats, Gender, Name, and IR
+fifaDS <- read_csv(file="fifa21_male2.csv")
+FIFA.FINAL <- fifaDS %>% 
+  select(-c('Player Photo','Flag Photo','Club Logo','Team & Contract','Joined','Loan Date End','Name','IR','Release Clause', 'Contract','Position'))%>%
+  select(-('LS':'Gender'))%>%
+  separate(Height, into = c("ft","inch"), convert = TRUE)%>%
+  mutate(Height = ft*30.48 + inch*2.54, ft=NULL, inch=NULL)%>%
+  mutate(Weight = as.numeric(str_replace(Weight, "lbs", "")))%>%
+  mutate(`W/F` = as.numeric(str_replace(`W/F`," ★","")))%>%
+  mutate(`SM` = as.numeric(str_replace(`SM`,"★","")))%>%
+  mutate(Hits = as.numeric(Hits))
+
+FIFA.FINAL$Value = getMoney(FIFA.FINAL$Value)
+names(FIFA.FINAL)
+str(FIFA.FINAL)
+```
+
